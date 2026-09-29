@@ -1,36 +1,16 @@
-# .github/workflows/ci.yml — 三套测试各一个 job,挂了按 job 名定位。
-# browser job 显式装 chrome(排除 ubuntu 自带 chrome 版本/路径变量)。
+# .github/workflows/ci.yml — 零运行时依赖,无需 npm install,直接跑三套测试。
+# browser 用 Node 22 内置 fetch+WebSocket 走 CDP 驱动系统 chrome(ubuntu runner 自带)。
 name: CI
 on:
   push:
   pull_request:
 jobs:
-  core:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
-      - run: npm ci --omit=dev   # 零运行依赖,跳过 puppeteer-core
       - run: node test.mjs
-  web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22' }
-      - run: npm ci --omit=dev
       - run: node test-web.mjs
-  browser:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '22' }
-      - run: npm ci
-      - uses: browser-actions/setup-chrome@v1
-        id: chrome
-        with: { chrome-version: stable }
       - run: node test-browser.mjs
-        env:
-          MINI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}

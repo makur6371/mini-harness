@@ -3,7 +3,7 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { rmSync, mkdirSync, readFileSync, existsSync } from 'node:fs';
-import puppeteer from 'puppeteer-core';
+import { launch } from './cdp.mjs';
 
 const WORK = process.cwd();
 const TMP = 'data-screenshot';
@@ -75,15 +75,9 @@ const hostPort = await freePort();
 const host = createServer((req, res) => res.writeHead(200, { 'content-type': 'text/html' }).end(demoHtml));
 await new Promise((r) => host.listen(hostPort, '127.0.0.1', r));
 
-const browser = await puppeteer.launch({
-  executablePath: process.env.MINI_CHROME_PATH || '/usr/bin/google-chrome',
-  headless: 'new',
-  args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--no-first-run', '--no-default-browser-check'],
-  userDataDir: `${CHROME_HOME}/profile`,
-});
-const page = await browser.newPage();
+const page = await launch({ homeDir: CHROME_HOME });
 await page.setViewport({ width: 1280, height: 800, deviceScaleFactor: 2 });
-await page.goto(`http://localhost:${hostPort}/`, { waitUntil: 'networkidle0', timeout: 15000 });
+await page.goto(`http://localhost:${hostPort}/`);
 
 // 打开面板、发问、等逐字回复写完
 await page.evaluate(() => {
@@ -113,8 +107,8 @@ if (!existsSync('docs')) mkdirSync('docs');
 await page.screenshot({ path: 'docs/screenshot.png', fullPage: true });
 console.log('已生成 docs/screenshot.png');
 
-await browser.close();
+await page.close();
 host.close();
 srv.kill();
 mockLLM.close();
-rmSync(TMP, { recursive: true, force: true });
+try { rmSync(TMP, { recursive: true, force: true }); } catch { /* chrome profile 残留,忽略 */ }

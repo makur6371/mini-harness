@@ -1,11 +1,11 @@
 // test-browser.mjs — 真浏览器 E2E:验证 embed.js 这条"第一目的"产物真的能跑。
 // 跨端口 = 真跨域,顺带覆盖 CORS 预检/SSE 流式渲染整条链路。
-// 需求:系统装了 google-chrome;`npm install` 装了 puppeteer-core(devDep)。
+// 需求:系统装了 google-chrome;零 npm 依赖(Node 22 内置 fetch+WebSocket 走 CDP)。
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
 import { rmSync, mkdirSync } from 'node:fs';
-import puppeteer from 'puppeteer-core';
+import { launch } from './scripts/cdp.mjs';
 
 const WORK = process.cwd();
 const TMP = 'data-test-browser';
@@ -87,27 +87,16 @@ const hostUrl = `http://127.0.0.1:${hostPort}/`;
 const agentOrigin = `http://127.0.0.1:${agentPort}`;
 assert.notEqual(hostPort, agentPort, '宿主页与 agent 必须跨端口(真跨域)');
 
-// —— 启动真浏览器 ——
-const browser = await puppeteer.launch({
-  executablePath: process.env.MINI_CHROME_PATH || '/usr/bin/google-chrome',
-  headless: 'new',
-  args: [
-    '--no-sandbox',
-    '--disable-gpu',
-    '--disable-dev-shm-usage',
-    '--no-first-run',
-    '--no-default-browser-check',
-  ],
-  userDataDir: `${CHROME_HOME}/profile`,
-});
-const page = await browser.newPage();
-const reqs = [];
-page.on('request', (r) => reqs.push(r.url()));
+// —— 启动真浏览器(零依赖 CDP)——
+const page = await launch({ homeDir: CHROME_HOME });
+await page.goto(hostUrl);
 
-await page.goto(hostUrl, { waitUntil: 'networkidle0', timeout: 15000 });
-
-// 1. embed.js 跨域加载成功
-assert.ok(reqs.some((u) => u === `${agentOrigin}/embed.js`), '应跨域加载 embed.js');
+// 1. embed.js 跨域加载成功(用 performance entries 证实)
+const loadedEmbed = await page.evaluate(
+  (origin) => performance.getEntriesByType('resource').some((r) => r.name === `${origin}/embed.js`),
+  agentOrigin
+);
+assert.ok(loadedEmbed, '应跨域加载 embed.js');
 console.log('ok  跨域加载 embed.js(真浏览器 <script>)');
 
 // 2. 气泡 + 面板存在于 Shadow DOM
@@ -177,9 +166,9 @@ const finalText = await page.evaluate(() => {
 assert.equal(finalText, REPLY, '最终气泡文本应等于流式完整回复');
 console.log(`ok  最终回复完整渲染${sawPartial ? '(中途捕获到逐字片段 ✅)' : '(未捕到中途片段,但完整渲染 ✅)'}`);
 
-await browser.close();
+await page.close();
 hostServer.close();
 srv.kill();
 mockLLM.close();
-rmSync(TMP, { recursive: true, force: true });
+try { rmSync(TMP, { recursive: true, force: true }); } catch { /* chrome profile 残留,忽略 */ }
 console.log('\n浏览器 E2E 全部通过 ✅');

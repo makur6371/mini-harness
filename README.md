@@ -111,7 +111,7 @@ HTTP API / 数据库 / CRM——这就是"想怎么垂直就怎么垂直"。
 
     node test.mjs            # 内核 + 冒烟(不需要 API key)
     node test-web.mjs        # 访客形态 14 项:流式/CORS/限流/双站点包/回滚/重启恢复(全 mock)
-    node test-browser.mjs    # 真 Chrome:跨域加载/Shadow DOM/打字机逐字(需先 npm install)
+    node test-browser.mjs    # 真 Chrome:跨域加载/Shadow DOM/打字机逐字(需系统装 chrome;零 npm 依赖)
 
 ## 对应到 deepseek-harness
 
