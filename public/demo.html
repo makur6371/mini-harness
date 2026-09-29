@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- demo.html — 模拟"某个垂直行业网站"的宿主页:一个口腔诊所官网。
+     接入 Agent 的方式就是在页面底部加那一行 <script>,页面其余部分与 Agent 无关。 -->
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>皓齿口腔 — 官网</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; color: #1e293b; }
+    header { padding: 14px 6vw; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid #e2e8f0; }
+    header b { font-size: 18px; }
+    nav a { margin-left: 22px; color: #475569; text-decoration: none; font-size: 14px; }
+    .hero { padding: 64px 6vw; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); }
+    .hero h1 { margin: 0 0 10px; font-size: 32px; }
+    .hero p { color: #475569; max-width: 520px; line-height: 1.7; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; padding: 0 6vw 48px; }
+    .card { border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; }
+    .card h3 { margin: 0 0 6px; font-size: 16px; }
+    .card p { margin: 0; color: #64748b; font-size: 13px; line-height: 1.6; }
+    footer { padding: 20px 6vw; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <header>
+    <b>🦷 皓齿口腔</b>
+    <nav><a href="#">项目</a><a href="#">医生</a><a href="#">门店</a><a href="#">关于</a></nav>
+  </header>
+  <section class="hero">
+    <h1>让每一次刷牙都有回响</h1>
+    <p>连锁口腔门诊,20 年诊疗经验。洁牙、补牙、矫正、种植,均在明码区间内透明收费。
+       右下角的助手可以随时为你报价、查排班、挂号。</p>
+  </section>
+  <section class="cards">
+    <div class="card"><h3>超声波洁牙</h3><p>199 元起,40 分钟,当日可约。</p></div>
+    <div class="card"><h3>隐形矫正</h3><p> Free inox 19800 元起,免费 3D 方案设计。</p></div>
+    <div class="card"><h3>种植牙</h3><p>6800 元起,进口植体,质保 10 年。</p></div>
+  </section>
+  <footer>© 2025 皓齿口腔(演示页,用于展示 Agent 接入效果)</footer>
+
+  <!-- ====== 唯一的接入点:一行 script,站点包决定行为 ====== -->
+  <script src="http://localhost:8787/embed.js" data-site="demo-clinic" defer></script>
+</body>
+</html>
