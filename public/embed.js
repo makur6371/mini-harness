@@ -102,19 +102,20 @@
       if (!text || busy) return;
       busy = true;
       input.value = '';
+      send.disabled = true;
       add('user', text);
       const tip = add('bot', '…');
-      tip.className = 'msg bot typing';
+      let started = false; // 收到首个 delta 后替换占位符
       try {
         const res = await fetch(api, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ sessionId: sid, message: text }),
         });
-        // 简单 SSE 解析:取 event: final
         const reader = res.body.getReader();
         const dec = new TextDecoder();
         let buf = '';
+        let finalText = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -124,18 +125,38 @@
           for (const b of blocks) {
             const ev = /^event: (.+)$/m.exec(b)?.[1];
             const data = /^data: (.+)$/m.exec(b)?.[1];
-            if (ev === 'final' && data) {
-              const { content } = JSON.parse(data);
-              tip.className = 'msg bot';
-              tip.textContent = content || '(空回复)';
+            if (!data) continue;
+            const payload = JSON.parse(data);
+            if (ev === 'delta') {
+              if (!started) {
+                tip.className = 'msg bot';
+                tip.textContent = '';
+                started = true;
+              }
+              tip.textContent += payload.text; // 打字机
+              log.scrollTop = log.scrollHeight;
+            } else if (ev === 'reset') {
+              tip.textContent = '';
+            } else if (ev === 'final') {
+              finalText = payload.content ?? '';
             }
           }
+        }
+        if (!started && finalText) {
+          tip.className = 'msg bot';
+          tip.textContent = finalText;
+        } else if (started && finalText && tip.textContent !== finalText) {
+          tip.textContent = finalText; // 以 final 兜底校正
+        } else if (!started) {
+          tip.className = 'msg bot';
+          tip.textContent = finalText || '(空回复)';
         }
       } catch {
         tip.className = 'msg bot';
         tip.textContent = '网络出错了,请重试。';
       }
       busy = false;
+      send.disabled = false;
     }
   }
 })();

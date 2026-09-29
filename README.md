@@ -23,7 +23,8 @@
     server.mjs                  网站挂载层:多站点、每站点一内核、SSE 端点
     public/embed.js             一行 <script> 接入的聊天窗(Shadow DOM 隔离)
     public/demo.html            宿主页示例(口腔诊所官网)
-    sites/demo-clinic.site.mjs  ★ 垂直站点插件包示例
+    sites/demo-clinic.site.mjs  ★ 垂直站点包示例(口腔诊所:咨询+挂号)
+    sites/demo-shop.site.mjs    ★ 垂直站点包示例(电商:查库存+下单)
     sites/README.md             站点包协议说明
     cli.mjs / test.mjs          开发者形态 + 内核测试
     test-web.mjs                访客形态端到端测试(mock LLM,走真实 HTTP/SSE)
@@ -72,17 +73,20 @@ HTTP API / 数据库 / CRM——这就是"想怎么垂直就怎么垂直"。
 |---|---|---|
 | `ctx.prompt.register` | 装载时 | 行业身份、话术规则 |
 | `ctx.tools.register` | 装载时 | 报价/库存/预约/查单…… |
-| `ctx.on('before:chat')` | 每条消息前 | 守门、改写、限流 |
-| `ctx.on('after:final')` | 回复后 | 兜底话术、合规过滤 |
-| `ctx.store` | 任意 | 预约单、留资、表单落盘 |
-| `ctx.embed` | 装载时 | 标题/欢迎语/主题色 |
+| `ctx.on('before:chat')` | 每条消息前 | 守门、改写(p.reject 直接拒绝) |
+| `ctx.on('after:final')` | 回复后 | 兜底话术、合规过滤(改 `out.content`) |
+| `ctx.store` | 任意 | 预约单、订单、表单落盘(重启可恢复) |
+| `ctx.embed` | 装载时 | 标题/欢迎语/主题色/`allowedOrigins` 白名单 |
 
-端点:`GET /embed.js`、`GET /s/:site/embed.json`、`POST /s/:site/api/chat`(SSE)、`GET /healthz`。
+端点:`GET /embed.js`、`GET /s/:site/embed.json`、`POST /s/:site/api/chat`(SSE:`delta` 逐段 → `reset` 工具轮前清屏 → `final` 收尾)、`GET /healthz`。
+
+内置防护:OPTIONS 预检 + CORS、每 IP+会话令牌桶限流(429)、消息校验、失败轮回滚、
+会话 TTL/LRU 与落盘恢复、客户端断连即中止 LLM。
 
 ## 测试
 
     node test.mjs        # 内核 + 开发者形态(不需要 API key)
-    node test-web.mjs    # 访客形态:mock LLM → 真实 HTTP/SSE → 站点包钩子 → 预约落盘
+    node test-web.mjs    # 访客形态 13 项:流式/CORS/限流/双站点包/回滚/重启恢复(全 mock)
 
 ## 对应到 deepseek-harness
 
@@ -91,9 +95,9 @@ store↔storage-json、events↔cordis)。**站点包 = DSH 的 `agent-presets` 
 (按会话组合插件)搬到网站场景:每站点一个 cordis.yml 式的组合文件,只是这里
 组合物是 20 行 JS 而不是一整套 UI。
 
-## 生产化前还差什么(按需加,内核不用改)
+## 生产化还差什么(v0.2 已内置 CORS/限流/流式/持久化)
 
-- 会话持久化/上限:server 里 `ctx.sessions` 换成 store 缝 + TTL
-- 鉴权与限流:`before:chat` 钩子里做(Origin 校验、每 IP 限频)
-- 流式打字机:`after:final` 改为逐段 `sse(res, 'delta', …)`
-- 真正的多站点隔离部署:每站点独立进程 + 独立 DATA_DIR
+- 多副本部署:会话换 Redis/Postgres(改 `ctx.sessions` 一个对象即可)
+- 更严格的鉴权:按客户签发 embed token,`before:chat` 里校验
+- 密钥隔离:大客户独立进程 + 独立 `MINI_LLM_API_KEY`
+- 观测:接入 OpenTelemetry(事件缝上挂 exporter 即可)
