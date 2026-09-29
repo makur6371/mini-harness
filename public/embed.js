@@ -10,7 +10,10 @@
   const site = me?.dataset?.site || 'demo-clinic';
   const origin = new URL(me.src, location.href).origin;
   const api = `${origin}/s/${site}/api/chat`;
-  const sid = 's-' + Math.random().toString(36).slice(2, 9);
+  // sid 持久化:同一浏览器回访不失忆(sessionStorage 关页即清,localStorage 可跨回话)
+  const sidKey = `mini-agent-sid:${site}`;
+  const sid = sessionStorage.getItem(sidKey) || 's-' + Math.random().toString(36).slice(2, 9);
+  sessionStorage.setItem(sidKey, sid);
 
   const css = `
     :host, :host * { box-sizing: border-box; font-family: system-ui, sans-serif; }
@@ -45,14 +48,19 @@
     document.body.appendChild(host);
     const root = host.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
-    style.textContent = css.replace(/--accent/g, `--accent`) + `:host{--accent:${cfg.theme.accent}}`;
+    // cfg.theme.accent 来自站点包(可信来源);仍只接受合法颜色值,再插入 CSS
+    const accent = /^#[0-9a-fA-F]{3,8}$|^[a-zA-Z()0-9%,.\s]+$/.test(String(cfg.theme.accent))
+      ? cfg.theme.accent
+      : '#4f46e5';
+    style.textContent = `${css} :host{--accent:${accent}}`;
     root.appendChild(style);
 
     const wrap = document.createElement('div');
+    // 标题/欢迎语用 textContent 注入,不做 HTML 拼接
     wrap.innerHTML = `
-      <button class="fab" title="${cfg.title}">💬</button>
+      <button class="fab" title=""></button>
       <div class="panel" style="display:none">
-        <div class="head">${cfg.title}</div>
+        <div class="head"></div>
         <div class="log"></div>
         <div class="foot">
           <input placeholder="输入你的问题…">
@@ -60,6 +68,9 @@
         </div>
       </div>`;
     root.appendChild(wrap);
+    wrap.querySelector('.fab').title = cfg.title;
+    wrap.querySelector('.fab').textContent = '💬';
+    wrap.querySelector('.head').textContent = cfg.title;
 
     const panel = wrap.querySelector('.panel');
     const fab = wrap.querySelector('.fab');

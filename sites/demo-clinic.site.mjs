@@ -62,9 +62,10 @@ export default async function install(ctx, env) {
     },
   });
 
-  // —— 3. 兜底:走事件缝 ——
-  ctx.on('after:final', ({ content }) => {
-    if (!content || !content.trim()) return { content: '这个问题我需要转人工确认,稍后会有顾问联系你,也可以拨打 400-000-0000。' };
+  // —— 3. 兜底:走事件缝(handler 直接修改 payload,返回值无效)——
+  ctx.on('after:final', (out) => {
+    if (!out.content || !out.content.trim())
+      out.content = '这个问题我需要转人工确认,稍后会有顾问联系你,也可以拨打 400-000-0000。';
   });
 
   // —— 4. 前端呈现:embed.json 会读这里 ——

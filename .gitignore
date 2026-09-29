@@ -3,3 +3,4 @@ data/
 data-*/
 *.log
 .DS_Store
+.ssh-deploy/

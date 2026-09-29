@@ -1,7 +1,7 @@
 // test-web.mjs — 网站形态的端到端测试:mock LLM,走真实 HTTP + SSE + 站点包钩子
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { rmSync, readFileSync, mkdirSync } from 'node:fs';
 
 rmSync('data-test-web', { recursive: true, force: true });
 mkdirSync('data-test-web', { recursive: true });
@@ -139,9 +139,55 @@ const r4 = await fetch(`${BASE}/s/nope/api/chat`, { method: 'POST', body: '{}' }
 assert.equal(r4.status, 404);
 console.log('ok  未知站点隔离');
 
+// 6. 兜底钩子:模型返回空回复 → after:final 应替换成转人工话术
+script.length = 0; step = 0;
+script.push(() => ({ choices: [{ message: { role: 'assistant', content: '   ' } }] }));
+const r5 = await fetch(`${BASE}/s/demo-clinic/api/chat`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ sessionId: 'u6', message: '说点什么' }),
+});
+const final5 = JSON.parse(/^data: (.+)$/m.exec(await r5.text())?.[1] ?? '{}');
+assert.match(final5.content, /转人工/, '空回复应触发站点包兜底话术');
+console.log('ok  after:final 兜底钩子生效');
+
+// 7. 失败回滚:让 LLM 打 500 → 会话不应被半截对话污染,下一轮照常
+script.length = 0; step = 0;
+script.push(() => null); // 第 1 轮:LLM 返回异常响应,触发内核错误路径
+script.push((req) => {
+  const roles = req.messages.map((m) => m.role);
+  assert.ok(!roles.includes('tool'), `回滚后不应残留 tool 消息:${roles}`);
+  // 不变量:失败轮次整体消失(含当时的用户消息),会话里只剩本轮提问
+  assert.equal(roles.filter((r) => r === 'user').length, 1, `失败轮应被整体回滚:${roles}`);
+  assert.equal(roles[roles.length - 1], 'user', '最后一条应是本轮用户消息');
+  return { choices: [{ message: { role: 'assistant', content: '恢复后的正常回答' } }] };
+});
+const r6 = await fetch(`${BASE}/s/demo-clinic/api/chat`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ sessionId: 'u7', message: '第一轮,会遇到 500' }),
+});
+const final6 = JSON.parse(/^data: (.+)$/m.exec(await r6.text())?.[1] ?? '{}');
+assert.match(final6.content, /抱歉,我这边出了点问题/);
+const r7 = await fetch(`${BASE}/s/demo-clinic/api/chat`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ sessionId: 'u7', message: '第二轮,应该恢复正常' }),
+});
+const final7 = JSON.parse(/^data: (.+)$/m.exec(await r7.text())?.[1] ?? '{}');
+assert.match(final7.content, /恢复后的正常回答/);
+console.log('ok  失败回滚:失败轮整体消失,会话可恢复');
+
+// 8. 坏请求:空 message → 400,且不进会话历史
+const r8 = await fetch(`${BASE}/s/demo-clinic/api/chat`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json' },
+  body: JSON.stringify({ sessionId: 'u8', message: '  ' }),
+});
+assert.equal(r8.status, 400);
+console.log('ok  空消息 400,不污染历史');
+
 mockLLM.close();
 srv.kill();
 rmSync('data-test-web', { recursive: true, force: true });
 console.log('\nweb 全部通过 ✅');
-
-import { readFileSync } from 'node:fs';
