@@ -68,10 +68,11 @@ export default async function install(ctx, env) {
       out.content = '这个问题我需要转人工确认,稍后会有顾问联系你,也可以拨打 400-000-0000。';
   });
 
-  // —— 4. 前端呈现:embed.json 会读这里 ——
+  // 4. 前端呈现:embed.json 会读这里;tokens 从 config.json 注入(不进仓库)
   ctx.embed = {
     title: '皓齿口腔 · 小皓',
     welcome: '你好,我是小皓 🦷 想了解项目价格或预约挂号,直接说就行~',
     theme: { accent: '#0ea5e9' },
+    tokens: env.config.tokens ?? [],
   };
 }

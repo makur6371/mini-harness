@@ -1,0 +1,24 @@
+# fly.toml — Fly.io 配置。fly launch 会自动填充 app 名与 region。
+app = "mini-harness"
+primary_region = "hkg"  # 香港;按你的访客分布改
+
+[build]
+
+[http_service]
+  internal_port = 8787
+  force_https = true
+  auto_stop_machines = true   # 空闲自动停机(省钱),首请求冷启动 ~1s
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "10s"
+  method = "GET"
+  path = "/healthz"
+
+# 持久卷:站点会话与 store 数据落盘
+[[mounts]]
+  source = "mini_data"
+  destination = "/app/data"

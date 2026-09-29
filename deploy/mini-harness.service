@@ -1,0 +1,16 @@
+[Unit]
+Description=mini-harness agent server
+After=network.target
+
+[Service]
+Type=simple
+User=agentuser
+WorkingDirectory=/home/agentuser/1/mini-harness
+Environment=MINI_LLM_API_KEY=sk-xxx
+Environment=PORT=8787
+ExecStart=/usr/bin/node server.mjs
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

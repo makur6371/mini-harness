@@ -8,6 +8,7 @@
 
   const me = document.currentScript;
   const site = me?.dataset?.site || 'demo-clinic';
+  const token = me?.dataset?.token || '';
   const origin = new URL(me.src, location.href).origin;
   const api = `${origin}/s/${site}/api/chat`;
   // sid 持久化:同一浏览器回访不失忆(sessionStorage 关页即清,localStorage 可跨回话)
@@ -109,7 +110,7 @@
       try {
         const res = await fetch(api, {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', ...(token ? { 'x-agent-token': token } : {}) },
           body: JSON.stringify({ sessionId: sid, message: text }),
         });
         const reader = res.body.getReader();

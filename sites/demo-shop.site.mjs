@@ -87,5 +87,6 @@ export default async function install(ctx, env) {
     title: '极客严选 · 小极',
     welcome: '你好,我是小极 🎧 想找键盘、耳机还是显示器?说说预算我帮你挑~',
     theme: { accent: '#16a34a' },
+    tokens: env.config.tokens ?? [],
   };
 }

@@ -1,6 +1,6 @@
 {
   "name": "mini-harness",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "A ~700-line minimal viable Agent harness: 5 seams + 1 loop + plugin packs for vertical websites.",

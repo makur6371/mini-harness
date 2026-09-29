@@ -25,6 +25,7 @@
     public/demo.html            宿主页示例(口腔诊所官网)
     sites/demo-clinic.site.mjs  ★ 垂直站点包示例(口腔诊所:咨询+挂号)
     sites/demo-shop.site.mjs    ★ 垂直站点包示例(电商:查库存+下单)
+    deploy/                     部署包:Dockerfile / fly.toml / nginx.conf / systemd / 示例客户页
     sites/README.md             站点包协议说明
     cli.mjs / test.mjs          开发者形态 + 内核测试
     test-web.mjs                访客形态端到端测试(mock LLM,走真实 HTTP/SSE)
@@ -80,8 +81,18 @@ HTTP API / 数据库 / CRM——这就是"想怎么垂直就怎么垂直"。
 
 端点:`GET /embed.js`、`GET /s/:site/embed.json`、`POST /s/:site/api/chat`(SSE:`delta` 逐段 → `reset` 工具轮前清屏 → `final` 收尾)、`GET /healthz`。
 
-内置防护:OPTIONS 预检 + CORS、每 IP+会话令牌桶限流(429)、消息校验、失败轮回滚、
-会话 TTL/LRU 与落盘恢复、客户端断连即中止 LLM。
+内置防护:OPTIONS 预检 + CORS、embed token 鉴权(401)、每 IP+会话令牌桶限流(429)、
+消息校验、失败轮回滚、会话 TTL/LRU 与落盘恢复、客户端断连即中止 LLM。
+
+## 部署到公网
+
+见 [`deploy/README.md`](deploy/README.md):Fly.io / Docker / systemd+nginx 三种,都是改一行 host。
+接入客户网站就一行(部署后 token 写进 `data/<site>/config.json`,不进仓库):
+
+    <script src="https://your-host/embed.js" data-site="demo-clinic" data-token="sek-..." defer></script>
+
+> `data-token` 在页面源码里可见(同 Google Maps key 的固有限制);防刷靠
+> **token + 限流 + Origin 白名单**三层组合,别把它当密钥。
 
 ## 测试
 

@@ -1,7 +1,7 @@
 // test-web.mjs — 网站形态的端到端测试:mock LLM,走真实 HTTP + SSE + 站点包钩子
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { rmSync, readFileSync, mkdirSync } from 'node:fs';
+import { rmSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 rmSync('data-test-web', { recursive: true, force: true });
 mkdirSync('data-test-web', { recursive: true });
@@ -318,6 +318,42 @@ const rp = await fetch(`${BASE2}/s/demo-clinic/api/chat`, {
 assert.match(parseSSE(await rp.text()).final?.content ?? '', /记忆恢复成功/);
 srv2.kill();
 console.log('ok  会话持久化:重启后记忆恢复');
+
+// 12. token 鉴权门:站点配了 tokens,不带或带错的都 401,带对的才 200
+//     用一个全新 server 实例,从 config.json 注入 tokens,避免影响前面测试
+writeFileSync('data-test-web/sites/demo-clinic/config.json', JSON.stringify({ tokens: ['sek-abc'] }));
+const srv4 = spawn('node', ['server.mjs'], {
+  cwd: process.cwd(),
+  env: { ...process.env, PORT: String(SRV_PORT + 2), DATA_DIR: 'data-test-web/sites',
+    MINI_LLM_API_KEY: 'mock', MINI_LLM_BASE_URL: `http://127.0.0.1:${port}` },
+  stdio: ['ignore', 'pipe', 'pipe'],
+});
+let log4 = '';
+srv4.stdout.on('data', (d) => (log4 += d));
+await new Promise((resolve) => {
+  const t = setInterval(() => log4.includes('已挂载') && (clearInterval(t), resolve(true)), 100);
+  setTimeout(() => resolve(false), 5000);
+});
+const BASE4 = `http://127.0.0.1:${SRV_PORT + 2}`;
+const chat4 = (token) => fetch(`${BASE4}/s/demo-clinic/api/chat`, {
+  method: 'POST',
+  headers: { 'content-type': 'application/json', ...(token ? { 'x-agent-token': token } : {}) },
+  body: JSON.stringify({ sessionId: 'u-tk', message: 'hi' }),
+});
+// 无 token → 401
+assert.equal((await chat4()).status, 401);
+// 错 token → 401
+assert.equal((await chat4('wrong')).status, 401);
+// 自定义头要在 CORS 预检里被放行
+const pre2 = await fetch(`${BASE4}/s/demo-clinic/api/chat`, { method: 'OPTIONS' });
+assert.match(pre2.headers.get('access-control-allow-headers') ?? '', /x-agent-token/);
+// 对 token → 200
+script.push(() => ({ choices: [{ message: { role: 'assistant', content: '已授权,你好~' } }] }));
+const ok = await chat4('sek-abc');
+assert.equal(ok.status, 200);
+assert.match(parseSSE(await ok.text()).final?.content ?? '', /已授权/);
+srv4.kill();
+console.log('ok  token 鉴权门:401/401/200 + CORS 放行自定义头');
 
 mockLLM.close();
 rmSync('data-test-web', { recursive: true, force: true });

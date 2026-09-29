@@ -113,10 +113,19 @@ function corsHeaders(site, req) {
   return {
     'access-control-allow-origin': allow,
     'access-control-allow-methods': 'GET, POST, OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-headers': 'content-type, x-agent-token',
     'access-control-max-age': '86400',
     vary: 'Origin',
   };
+}
+
+/** embed token 门:站点包 ctx.embed.tokens 非空时,请求须带匹配的 X-Agent-Token。
+ *  注:脚本标签里的 token 在页面源码里可见(同 Google Maps key 的固有限制),
+ *  真正的防刷靠它+限流+Origin 白名单组合,而非把它当密钥。 */
+function tokenOk(site, req) {
+  const tokens = site?.embed?.tokens;
+  if (!Array.isArray(tokens) || tokens.length === 0) return true; // 未配置 = 开放(开发/调试)
+  return tokens.includes(req.headers['x-agent-token']);
 }
 
 async function handleChat(sites, siteId, body, req, res) {
@@ -129,10 +138,18 @@ async function handleChat(sites, siteId, body, req, res) {
   // —— 入参校验:坏消息不能进历史(历史一旦污染,后续每轮都会 400)——
   const { sessionId: rawSid, message } = body ?? {};
   if (typeof message !== 'string' || !message.trim()) {
-    res.writeHead(400, { 'content-type': 'application/json' });
+    res.writeHead(400, { 'content-type': 'application/json', ...corsHeaders(ctx, req) });
     res.end(JSON.stringify({ error: 'message 必须是非空字符串' }));
     return;
   }
+
+  // —— token 门:站点配了 tokens 就必须带 ——
+  if (!tokenOk(ctx, req)) {
+    res.writeHead(401, { 'content-type': 'application/json', ...corsHeaders(ctx, req) });
+    res.end(JSON.stringify({ error: '无效或缺失的 X-Agent-Token' }));
+    return;
+  }
+
   const sessionId = String(rawSid || 'anon').slice(0, 64);
 
   // —— 限流:每 IP+会话 令牌桶 ——

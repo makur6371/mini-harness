@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- deploy/customer-site.html — 最小宿主页示例:你的真实网站长什么样都行,
+     接入 Agent 只需底部那行 <script>。把 https://your-host 改成你部署的地址。 -->
+<html lang="zh">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>你的官网</title>
+  <style>body{margin:0;font-family:system-ui;padding:80px 6vw;color:#1e293b}h1{font-size:30px}</style>
+</head>
+<body>
+  <h1>欢迎来到我们的官网</h1>
+  <p>这里是你的业务内容。右下角的助手可以随时为访客答疑、报价、留资。</p>
+
+  <!-- ============ 接入 Agent 的全部:这一行 ============ -->
+  <script src="https://your-host/embed.js"
+          data-site="demo-clinic"
+          data-token="sek-把config.json里那串粘这里"
+          defer></script>
+</body>
+</html>
