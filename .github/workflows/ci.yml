@@ -1,0 +1,18 @@
+// .github/workflows/ci.yml — 三套测试在 CI 跑,顶部出绿标。
+// ubuntu runner 自带 google-chrome;test-browser.mjs 用 MINI_CHROME_PATH 兜底。
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: node test.mjs
+      - run: node test-web.mjs
+      - run: node test-browser.mjs

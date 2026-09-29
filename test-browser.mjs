@@ -89,7 +89,7 @@ assert.notEqual(hostPort, agentPort, '宿主页与 agent 必须跨端口(真跨�
 
 // —— 启动真浏览器 ——
 const browser = await puppeteer.launch({
-  executablePath: '/usr/bin/google-chrome',
+  executablePath: process.env.MINI_CHROME_PATH || '/usr/bin/google-chrome',
   headless: 'new',
   args: [
     '--no-sandbox',

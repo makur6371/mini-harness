@@ -1,5 +1,12 @@
 # mini-harness
 
+![mini-harness widget embedded in a demo site](docs/screenshot.png)
+
+> **EN** — A ~1k-line minimal AI agent harness for embedding into vertical/industry
+> websites. One `<script>` tag mounts a Shadow-DOM chat widget; one `sites/*.site.mjs`
+> file verticalizes identity / guardrails / tools / theme — the kernel never changes.
+> OpenAI-compatible LLM, SSE streaming, token auth, rate limit, deploy kit included.
+
 一个不到 1000 行(不含测试)的最小可行 Agent,专门为**垂直网站接入**而生:内核 = 5 个缝 + 1 个循环,插件只认识缝。**访客形态(网站嵌入)是产品形态**;另附一个终端 CLI 形态用于调试与内核冒烟。两者共用同一个内核,差别只是装了哪几个插件。
 
 > 范围标尺见 [`docs/PURPOSE.md`](docs/PURPOSE.md):目的、非目标、决策三问。
