@@ -1,0 +1,46 @@
+# .github/workflows/debug-npm.yml — 诊断:把 npm ci 完整输出推到 gha-logs 分支,便于无 admin 权限读。
+name: debug-npm
+on:
+  push:
+    paths:
+      - '.github/workflows/debug-npm.yml'
+  workflow_dispatch:
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: capture npm ci
+        run: |
+          set +e
+          {
+            echo "### node / npm / uname"
+            node -v
+            npm -v
+            uname -a
+            echo "### ls"
+            ls -la
+            echo "### cat package.json"
+            cat package.json
+            echo "### head package-lock.json"
+            head -30 package-lock.json
+            echo "### npm ci (full)"
+            npm ci
+            echo "npm ci exit=$?"
+          } > npm-ci.log 2>&1
+          cat npm-ci.log
+          exit 0
+      - name: publish log to gha-logs branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/makur6371/mini-harness.git"
+          git checkout --orphan gha-logs
+          git reset -q
+          git add npm-ci.log
+          git commit -m "npm ci log"
+          git push --force origin gha-logs
