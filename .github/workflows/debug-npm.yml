@@ -22,25 +22,22 @@ jobs:
             node -v
             npm -v
             uname -a
-            echo "### ls"
-            ls -la
+            echo "### npm config get registry / cache"
+            npm config get registry
+            npm config get cache
             echo "### cat package.json"
             cat package.json
             echo "### head package-lock.json"
-            head -30 package-lock.json
-            echo "### npm ci (full)"
+            head -20 package-lock.json
+            echo "### npm ci (full output)"
             npm ci
             echo "npm ci exit=$?"
           } > npm-ci.log 2>&1
           cat npm-ci.log
           exit 0
-      - name: publish log to gha-logs branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/makur6371/mini-harness.git"
-          git checkout --orphan gha-logs
-          git reset -q
-          git add npm-ci.log
-          git commit -m "npm ci log"
-          git push --force origin gha-logs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-ci-log
+          path: npm-ci.log
+          retention-days: 30
+
