@@ -10,7 +10,8 @@
   "scripts": {
     "test": "node test.mjs && node test-web.mjs",
     "start": "node server.mjs",
-    "demo": "node cli.mjs"
+    "demo": "node cli.mjs",
+    "test:browser": "node test-browser.mjs"
   },
   "license": "MIT",
   "keywords": [
@@ -20,5 +21,8 @@
     "mcp-adjacent",
     "plugin",
     "chatbot"
-  ]
+  ],
+  "devDependencies": {
+    "puppeteer-core": "^25.12.0"
+  }
 }

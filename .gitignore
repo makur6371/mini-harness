@@ -4,3 +4,11 @@ data-*/
 *.log
 .DS_Store
 .ssh-deploy/
+
+.npm-cache/
+.chrome-profile/
+.cache/
+.config/
+.local/
+.chrome-home/
+.chrome-profile/
