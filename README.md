@@ -1,5 +1,8 @@
 # mini-harness
 
+![CI](https://github.com/makur6371/mini-harness/actions/workflows/ci.yml/badge.svg)
+![license](https://img.shields.io/badge/license-MIT-blue)
+
 ![mini-harness widget embedded in a demo site](docs/screenshot.png)
 
 > **EN** — A ~1k-line minimal AI agent harness for embedding into vertical/industry

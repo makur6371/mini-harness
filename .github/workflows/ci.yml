@@ -1,18 +1,36 @@
-// .github/workflows/ci.yml — 三套测试在 CI 跑,顶部出绿标。
-// ubuntu runner 自带 google-chrome;test-browser.mjs 用 MINI_CHROME_PATH 兜底。
+# .github/workflows/ci.yml — 三套测试各一个 job,挂了按 job 名定位。
+# browser job 显式装 chrome(排除 ubuntu 自带 chrome 版本/路径变量)。
 name: CI
 on:
   push:
   pull_request:
 jobs:
-  test:
+  core:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: { node-version: '22' }
       - run: npm ci
       - run: node test.mjs
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci
       - run: node test-web.mjs
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: npm ci
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with: { chrome-version: stable }
       - run: node test-browser.mjs
+        env:
+          MINI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
