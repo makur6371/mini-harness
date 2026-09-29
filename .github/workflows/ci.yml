@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
-      - run: npm ci
+      - run: npm ci --omit=dev   # 零运行依赖,跳过 puppeteer-core
       - run: node test.mjs
   web:
     runs-on: ubuntu-latest
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '22' }
-      - run: npm ci
+      - run: npm ci --omit=dev
       - run: node test-web.mjs
   browser:
     runs-on: ubuntu-latest
