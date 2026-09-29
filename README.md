@@ -1,12 +1,12 @@
 # mini-harness
 
-一个 ~700 行的最小可行 Agent,专门为**垂直网站接入**而生:内核 = 5 个缝 + 1 个循环,
-插件只认识缝。开发者形态(终端 agent)和访客形态(网站客服/办事)共用同一个内核,
-差别只是装了哪几个插件。
+一个不到 1000 行(不含测试)的最小可行 Agent,专门为**垂直网站接入**而生:内核 = 5 个缝 + 1 个循环,插件只认识缝。**访客形态(网站嵌入)是产品形态**;另附一个终端 CLI 形态用于调试与内核冒烟。两者共用同一个内核,差别只是装了哪几个插件。
+
+> 范围标尺见 [`docs/PURPOSE.md`](docs/PURPOSE.md):目的、非目标、决策三问。
 
 ## 两种形态
 
-| | 开发者形态 | 访客形态(网站接入) |
+| | 调试形态(CLI) | 访客形态(网站接入,产品形态) |
 |---|---|---|
 | 入口 | `cli.mjs`(终端 REPL) | `server.mjs` + 一行 `<script>` |
 | 工具 | bash 一个打天下 | **站点包白名单**(绝不暴露 bash) |
@@ -27,8 +27,11 @@
     sites/demo-shop.site.mjs    ★ 垂直站点包示例(电商:查库存+下单)
     deploy/                     部署包:Dockerfile / fly.toml / nginx.conf / systemd / 示例客户页
     sites/README.md             站点包协议说明
-    cli.mjs / test.mjs          开发者形态 + 内核测试
-    test-web.mjs                访客形态端到端测试(mock LLM,走真实 HTTP/SSE)
+    cli.mjs                     调试/冒烟形态(终端 REPL;非发布形态)
+    docs/PURPOSE.md             项目章程:目的、非目标、决策三问(范围标尺)
+    test.mjs                    内核 + 冒烟(无需 API key)
+    test-web.mjs                访客形态端到端(mock LLM,走真实 HTTP/SSE)
+    test-browser.mjs            真 Chrome E2E:跨域加载/Shadow DOM/打字机
 
 ## 网站接入(三步)
 
@@ -96,8 +99,9 @@ HTTP API / 数据库 / CRM——这就是"想怎么垂直就怎么垂直"。
 
 ## 测试
 
-    node test.mjs        # 内核 + 开发者形态(不需要 API key)
-    node test-web.mjs    # 访客形态 13 项:流式/CORS/限流/双站点包/回滚/重启恢复(全 mock)
+    node test.mjs            # 内核 + 冒烟(不需要 API key)
+    node test-web.mjs        # 访客形态 14 项:流式/CORS/限流/双站点包/回滚/重启恢复(全 mock)
+    node test-browser.mjs    # 真 Chrome:跨域加载/Shadow DOM/打字机逐字(需先 npm install)
 
 ## 对应到 deepseek-harness
 
@@ -106,9 +110,9 @@ store↔storage-json、events↔cordis)。**站点包 = DSH 的 `agent-presets` 
 (按会话组合插件)搬到网站场景:每站点一个 cordis.yml 式的组合文件,只是这里
 组合物是 20 行 JS 而不是一整套 UI。
 
-## 生产化还差什么(v0.2 已内置 CORS/限流/流式/持久化)
+## 生产化还差什么(已内置 CORS/限流/流式/持久化/token 鉴权/浏览器 E2E)
 
+- 真模型流式实测:`llm.mjs` 的 SSE delta 拼装只跑过 mock,需真实 key 环境
 - 多副本部署:会话换 Redis/Postgres(改 `ctx.sessions` 一个对象即可)
-- 更严格的鉴权:按客户签发 embed token,`before:chat` 里校验
 - 密钥隔离:大客户独立进程 + 独立 `MINI_LLM_API_KEY`
 - 观测:接入 OpenTelemetry(事件缝上挂 exporter 即可)
