@@ -41,6 +41,7 @@
     docs/PURPOSE.md             项目章程:目的、非目标、决策三问(范围标尺)
     test.mjs                    内核 + 冒烟(无需 API key)
     test-web.mjs                访客形态端到端(mock LLM,走真实 HTTP/SSE)
+    test-stream.mjs             LLM 流式协议保真:tool_call 参数跨帧拆分/并行多 tool/keepalive
     test-browser.mjs            真 Chrome E2E:跨域加载/Shadow DOM/打字机
 
 ## 网站接入(三步)
@@ -111,6 +112,7 @@ HTTP API / 数据库 / CRM——这就是"想怎么垂直就怎么垂直"。
 
     node test.mjs            # 内核 + 冒烟(不需要 API key)
     node test-web.mjs        # 访客形态 14 项:流式/CORS/限流/双站点包/回滚/重启恢复(全 mock)
+    node test-stream.mjs     # LLM 协议保真 4 项:tool_call 参数跨帧拆分/并行多 tool/keepalive/帧跨读
     node test-browser.mjs    # 真 Chrome:跨域加载/Shadow DOM/打字机逐字(需系统装 chrome;零 npm 依赖)
 
 ## 对应到 deepseek-harness

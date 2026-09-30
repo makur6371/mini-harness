@@ -8,7 +8,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node test.mjs && node test-web.mjs",
+    "test": "node test.mjs && node test-web.mjs && node test-stream.mjs",
     "start": "node server.mjs",
     "demo": "node cli.mjs",
     "test:browser": "node test-browser.mjs"

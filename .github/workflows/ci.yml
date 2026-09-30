@@ -13,4 +13,5 @@ jobs:
         with: { node-version: '22' }
       - run: node test.mjs
       - run: node test-web.mjs
+      - run: node test-stream.mjs
       - run: node test-browser.mjs

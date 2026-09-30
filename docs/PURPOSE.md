@@ -42,7 +42,7 @@
 
 已具备:内核(冻结)、双形态(CLI 调试 / 网站嵌入)、流式打字机、CORS、token 鉴权、
 令牌桶限流、会话持久化与重启恢复、两个站点包示例(诊所 / 电商)、部署包。
-代码侧"能上公网"已齐;`test.mjs` + `test-web.mjs` + `test-browser.mjs`(真 Chrome)全绿。
+代码侧"能上公网"已齐;`test.mjs` + `test-web.mjs` + `test-stream.mjs`(LLM 协议保真) + `test-browser.mjs`(真 Chrome)全绿。
 
 ## 已知偏离与欠账(2025 审计结论,待还)
 
@@ -50,7 +50,7 @@
 |---|---|---|
 | `cli.mjs` + `tools-bash.mjs` 是"开发者终端 agent"形态 | **scope 漂移**(目的已收敛到网站) | 降级定位为"调试 / 内核冒烟夹具";`test.mjs` 仍依赖其插件 |
 | ~~`embed.js` 未过真浏览器~~ | **已补** v0.4.0 | `test-browser.mjs` 跑真 Chrome,跨域+打字机全过 |
-| 真模型流式未测(只 mock) | 欠账 | 需真实 key 环境 |
+| ~~真模型流式未测~~ | 协议层已覆盖(`test-stream.mjs`:参数跨帧拆分/并行多 tool/keepalive/帧跨读);网络层仍需真实 key |
 | `serveTurn` 每请求 monkey-patch `ctx.llm.chat` | 小味道 | 改成正经 onDelta 缝(可选) |
 | `store-json` 每次写整文件、无锁 | 小味道(单进程够用) | 已标为可换 Redis 的缝点 |
 
